@@ -35,7 +35,7 @@ websocket.onmessage = function (event) {
 		case 'message':
 			let message = document.createElement('p');
 			message.textContent = data.message;
-			messageWindow.insertBefore(message, );
+			messageWindow.insertBefore(message, messageWindow.firstChild);
 			break;
 		default:
                 	console.error(

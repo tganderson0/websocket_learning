@@ -5,11 +5,18 @@ import websockets
 
 logging.basicConfig()
 
+logger = logging.getLogger(__name__)
+logger.setLevel(10)
+
 STATE = {"value": 0}
 
 USERS = set()
 
 USERNAMES = set()
+
+class colors:
+    reset = "\033[0m"
+    red = "\033[31;1m"
 
 def state_event():
     return json.dumps({"type": "state", **STATE})
@@ -40,13 +47,17 @@ async def counter(websocket, path):
                 websockets.broadcast(USERS, state_event())
             elif data["action"] == "message":
                 if data["username"] in USERNAMES:
+                    logger.log(20, f" Chat from {data['username']}: {data['message']}")
                     websockets.broadcast(USERS, message_event(f"{data['username']} >> {data['message']}"))
                 else:
-                    logging.error(f"Unregistered user tried sending message: {data['message']}")
-            elif data["action"] == "register" and data["username"] not in USERNAMES:
-                USERNAMES.add(data["username"])
+                    logger.error(f"{colors.red}Unregistered user tried sending message{colors.reset}: {data['message']}")
+            elif data["action"] == "register":
+                if data["username"] not in USERNAMES:
+                    USERNAMES.add(data["username"])
+                else:
+                    await websocket.send(message_event("ERROR >> That username is taken, but security go brrrr... you logged in"))
             else:
-                logging.error(f"Unsupported event: {data}")
+                logger.error(f"Unsupported event: {data}")
     finally:
         USERS.remove(websocket)
         websockets.broadcast(USERS, users_event())
